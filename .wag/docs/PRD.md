@@ -1,7 +1,7 @@
 # PRD — claude-mcps (wagc)
 
 **Created:** 2026-09-04
-**Version:** 1.0
+**Version:** 1.1
 
 ## Overview
 
@@ -46,6 +46,8 @@ The payload is the artifacts themselves — documents, an ADR, a snag descriptio
 Phases covered: init (discovery in the planet, then repo creation from a template), docs, adr, dev (dispatch a run, later merge), rvw (dispatch a review, later accept dispositions), and tri.
 
 Dev and rvw execute as GitHub Actions jobs running Claude Code on a subscription token, with the wag toolkit checked out from claude-home at a pinned ref. Self-hosted runners on Sam's laptops pick up jobs when one is on; GitHub-hosted runners are the fallback. A run that needs a human posts a comment and stops; the answer re-triggers it.
+
+Existing wag2 projects are adopted, not rebuilt: a one-time step stamps the phase, adds the workflow and secret, and registers the project, after which CV handles it like any project born from the template. Projects continue to be worked from CC on a laptop as well, so the server must cope with a stored phase that a CC session left stale.
 
 ### Epic 002 — trust: audit, permissions, hardening
 
@@ -94,3 +96,8 @@ Dev and rvw execute as GitHub Actions jobs running Claude Code on a subscription
 - Where the audit log lives: a file in Dropbox, a repo, or a store the server owns.
 - How a stopped run is resumed after a human answers a comment — re-dispatch with a checkpoint, or re-run from the branch.
 - Whether GitHub-hosted fallback minutes are acceptable at the observed frequency of all-laptops-off, or whether one always-on runner is cheaper.
+
+## Changelog
+
+- 1.1 (2026-09-04) — Adoption of existing wag2 projects added to Epic 001 scope, with the CC-and-CV mixed-use constraint.
+- 1.0 (2026-09-04) — Initial, derived from the 2026-09-04 discovery grill.

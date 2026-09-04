@@ -1,7 +1,7 @@
 # Architecture — claude-mcps (wagc)
 
 **Created:** 2026-09-04
-**Version:** 1.0
+**Version:** 1.1
 **Derived from:** [PRD.md](./PRD.md) + [RESEARCH.md](./RESEARCH.md)
 
 ## Ubiquitous language
@@ -203,7 +203,9 @@ The baseline app already exists and boots: a Next.js 15 App Router project with 
 - **Voice layer.** How the ritual summarises an ADR or a review for speech without losing the written artifact's precision.
 - **Rate limits.** Whether one subscription comfortably carries CV plus concurrent runs.
 - **Fallback frequency.** Observed all-laptops-off rate, which decides whether one always-on runner is worth it.
+- **Stored phase versus derived position.** Projects are worked from CC as well as CV, and wag2's CC commands do not yet write the phase. When the two disagree, orient either repairs the phase from the artifacts or refuses until repaired; the uphill fix is wag2 writing the phase at the same boundaries. Decided in PBI 001.012's ADR, applied from PBI 001.001.
 
 ## Changelog
 
+- 1.1 (2026-09-04) — Open question on stored phase versus derived position for projects also worked from CC; adoption of existing projects noted.
 - 1.0 (2026-09-04) — Initial, derived from the 2026-09-04 discovery grill.
