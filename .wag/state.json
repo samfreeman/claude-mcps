@@ -1,0 +1,10 @@
+{
+	"app_name": "claude-mcps",
+	"wag_version": "0.4.1",
+	"current_mode": null,
+	"phase": "adr",
+	"active_epic": "epic-000-general",
+	"active_pbi": null,
+	"feature_branch": null,
+	"docs_page_path": null
+}
