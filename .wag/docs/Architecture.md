@@ -1,7 +1,7 @@
 # Architecture — claude-mcps (wagc)
 
 **Created:** 2026-09-04
-**Version:** 1.2
+**Version:** 1.3
 **Derived from:** [PRD.md](./PRD.md) + [RESEARCH.md](./RESEARCH.md)
 
 ## Ubiquitous language
@@ -15,7 +15,9 @@ One name per referent, everywhere — these docs, the tool contract, the data mo
 | **CV** | Claude Desktop with voice, on iOS or desktop. The client. It has MCP tools only. |
 | **project** | A thing being built with wag. Identified by name. Has a planet always, and a project repo once init completes. |
 | **entry point** | The single wag tool. Called with a project and no continuation it orients; with a continuation it acts. |
-| **orient** | The entry point's response when called without a continuation: current phase, position within it, suggested next step, and the ritual for the phase. |
+| **orient** | The entry point's response when called with a project and no continuation: current phase, position within it, suggested next step, and the ritual for the phase. |
+| **guide** | The entry point's response when called with no project: what wagc is, how to orient, and what the current release supports. |
+| **opener** | The first sentences of every response, spoken verbatim before anything else: where the project is and what comes next, or why a call was refused. |
 | **ritual** | The instructions the server returns to CV for running a phase's conversation: what to collect, what to discuss, which continuation comes next and what to put in it. |
 | **continuation** | One of three verbs passed to the entry point: **approve**, **snag**, **save**. |
 | **approve** | The phase is complete, continue. The server double-checks artifacts, refuses with a reason if they fall short, otherwise acts and advances the phase. |
@@ -99,10 +101,13 @@ claude-mcps/
 ├── app/api/[transport]/route.ts    MCP endpoint, shared-secret gate, mounts the surface
 ├── lib/
 │   ├── wag/                        the surface and the phase engine
-│   │   ├── entry.ts                the one tool: orient | approve | snag | save
-│   │   ├── phases/                 one file per phase: ritual, checks, actions, homes
-│   │   ├── position.ts             derive position from artifacts
-│   │   └── homes.ts                well-known home resolution (planet vs repo)
+│   │   ├── entry.ts                the one tool, wagc: guide | orient | approve | snag | save
+│   │   ├── facts.ts                gather facts from the working ref
+│   │   ├── derive.ts               derive phase and position from facts
+│   │   ├── render.ts               the voice-first response
+│   │   ├── rituals/                guide, voice preamble, one file per phase
+│   │   ├── phases/                 checks, actions, homes per phase (from PBI 001.003)
+│   │   └── homes.ts                well-known home resolution (from PBI 001.002)
 │   ├── modules/
 │   │   ├── github/                 contents, git-data commits, repos, PRs, comments
 │   │   ├── dropbox/                planet and kwiki file operations
@@ -129,7 +134,7 @@ samfreeman/claude-home              the toolkit, checked out at a pinned ref ins
 | 3 | Subscription OAuth token in Actions, no API key | Anthropic API key; Bedrock/Vertex | The no-API-tax constraint. Verified: claude-code-action accepts `claude_code_oauth_token` and bills to the subscription. |
 | 4 | Self-hosted runners first, GitHub-hosted fallback; repos private | GitHub-hosted only; public repos for free minutes; one always-on machine | Laptops become an optimisation, not architecture. Self-hosted must not serve public repos, so private it is, and fallback minutes are accepted on rare all-off days. |
 | 5 | Toolkit pinned, not copied | Copy the toolkit into each project; plugin now | A copy breaks RADD's uphill flow. A pinned claude-home ref is reproducible and upstream-fixable today; the plugin is the same pin in a better package later. |
-| 6 | One entry point with three continuations | Per-phase open/close tools; raw file tools with wag on good faith; a separate capture verb | approve, snag and save mean the same thing in every phase, so the phase engine, not the tool count, carries the phase logic. Enforcement on approve arrives for free. Raw tools stay reachable but unadvertised. |
+| 6 | One entry point with three continuations | Per-phase open/close tools; raw file tools with wag on good faith; a separate capture verb | approve, snag and save mean the same thing in every phase, so the phase engine, not the tool count, carries the phase logic. Enforcement on approve arrives for free. The module operations stay reachable to the server and can be mounted on a separate surface later; the wag surface advertises one tool. |
 | 7 | Phase derived, nothing stored beyond wag2's state | Store the phase (wag1's `current_mode`, dropped in wag2); store everything | Projects are worked from CC as well as the server, so a stored phase has two writers and drifts. Every phase is a function of the artifacts: no repo is discovery, an open snag is tri, an active ADR by status is adr or dev, a PR by review state is rvw or merge, nothing pending is between PBIs. Docs is a ritual run from that position, not a stored state. State stays exactly wag2's shape, so CC needs no change and adoption needs no stamp. |
 | 8 | Server chooses every well-known home | CV names paths; a save-specific location parameter | The planet/repo boundary is a rule the server owns. CV never knows where anything is. |
 | 9 | Init is two-stage: planet then template repo | Create the repo first; carry discovery in the closing call | Discovery can span sessions and must be saved as it goes; a template repo makes the first commit already carry the workflow, so there is no chicken-and-egg on dispatch. |
@@ -205,6 +210,7 @@ The baseline app already exists and boots: a Next.js 15 App Router project with 
 
 ## Changelog
 
+- 1.3 (2026-09-04) — ADR 001.001: guide and opener terms; one advertised tool; `lib/wag/` shape refined.
 - 1.2 (2026-09-04) — SNAG-001: phase derived, not stored; decision 7 and the state model corrected.
 - 1.1 (2026-09-04) — Open question on stored phase versus derived position for projects also worked from CC; adoption of existing projects noted.
 - 1.0 (2026-09-04) — Initial, derived from the 2026-09-04 discovery grill.
