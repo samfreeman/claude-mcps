@@ -1,7 +1,7 @@
 # PRD — claude-mcps (wagc)
 
 **Created:** 2026-09-04
-**Version:** 1.1
+**Version:** 1.2
 
 ## Overview
 
@@ -35,7 +35,7 @@ Three constraints hold throughout:
 
 ### Epic 001 — wagc: the wag shape from CV
 
-The wag surface as one entry point per project. Called with a project and no continuation, it orients: reads the stored phase and the artifacts, reports where the project is, suggests the next step, and returns the ritual CV needs to run that phase's conversation. Called with a continuation and a payload, it acts:
+The wag surface as one entry point per project. Called with a project and no continuation, it orients: reads the artifacts, derives the phase and position, reports where the project is, suggests the next step, and returns the ritual CV needs to run that phase's conversation. Called with a continuation and a payload, it acts:
 
 - **approve** — the phase is complete, continue. The server double-checks the artifacts before advancing (template manifests for docs, an approved ADR before dev, green checks and a review before merge) and refuses with a reason when they fall short.
 - **snag** — stop, a problem was discovered. The server captures it and halts the phase until tri clears it.
@@ -47,7 +47,7 @@ Phases covered: init (discovery in the planet, then repo creation from a templat
 
 Dev and rvw execute as GitHub Actions jobs running Claude Code on a subscription token, with the wag toolkit checked out from claude-home at a pinned ref. Self-hosted runners on Sam's laptops pick up jobs when one is on; GitHub-hosted runners are the fallback. A run that needs a human posts a comment and stops; the answer re-triggers it.
 
-Existing wag2 projects are adopted, not rebuilt: a one-time step stamps the phase, adds the workflow and secret, and registers the project, after which CV handles it like any project born from the template. Projects continue to be worked from CC on a laptop as well, so the server must cope with a stored phase that a CC session left stale.
+Existing wag2 projects are adopted, not rebuilt: a one-time step adds the workflow and secret and registers the project, after which CV handles it like any project born from the template. Projects continue to be worked from CC on a laptop as well, so the server stores nothing a CC session would have to keep current: the phase is derived from the artifacts on every orient.
 
 ### Epic 002 — trust: audit, permissions, hardening
 
@@ -84,7 +84,7 @@ Existing wag2 projects are adopted, not rebuilt: a one-time step stamps the phas
 - **Hosting.** Vercel Hobby tier. Function execution is bounded to minutes, so the server orchestrates and never executes long work. Runs are Actions jobs.
 - **Auth.** Anthropic model access is by Claude subscription only. Actions authenticate with a subscription token from `claude setup-token` stored as a repository secret. The server's endpoint is public and gated by a shared secret header.
 - **GitHub tier.** Free plan. Template repositories, workflow dispatch and self-hosted runners are available on it. Private repos are required because self-hosted runners must not serve public repos; GitHub-hosted fallback minutes on private repos are metered beyond the free monthly allowance.
-- **State.** Wag state lives in `.wag/` in the project repo. The stored phase is written only by the server; position within a phase is discovered from artifacts. Nothing wag reads or writes lives on a laptop disk.
+- **State.** Wag state lives in `.wag/` in the project repo. The state file keeps wag2's exact shape; phase and position are derived from artifacts on every orient, never stored. Nothing wag reads or writes lives on a laptop disk.
 - **Dropbox.** The planet and kwiki live in Dropbox and are edited through the server's Dropbox module. Dropbox is not a wag state store once a repo exists.
 - **Toolkit.** The wag commands, agents, workflows and templates come from the claude-home repo at a pinned ref. No project carries a copy.
 - **Code style.** TypeScript per `~/.claude/documents/typescript-rules.md`: single quotes, tabs, no semicolons, no trailing commas, `==`, single-statement blocks without braces.
@@ -99,5 +99,6 @@ Existing wag2 projects are adopted, not rebuilt: a one-time step stamps the phas
 
 ## Changelog
 
+- 1.2 (2026-09-04) — SNAG-001: phase derived, not stored; adoption and the State constraint corrected.
 - 1.1 (2026-09-04) — Adoption of existing wag2 projects added to Epic 001 scope, with the CC-and-CV mixed-use constraint.
 - 1.0 (2026-09-04) — Initial, derived from the 2026-09-04 discovery grill.

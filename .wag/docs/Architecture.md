@@ -1,7 +1,7 @@
 # Architecture — claude-mcps (wagc)
 
 **Created:** 2026-09-04
-**Version:** 1.1
+**Version:** 1.2
 **Derived from:** [PRD.md](./PRD.md) + [RESEARCH.md](./RESEARCH.md)
 
 ## Ubiquitous language
@@ -24,7 +24,7 @@ One name per referent, everywhere — these docs, the tool contract, the data mo
 | **payload** | What CV passes with a continuation: the artifacts, a snag description, a pickup note. |
 | **artifact** | A document wag produces: PRD, RESEARCH, Architecture, epic, PBI, ADR, review, snag, stash item, decision capture. |
 | **well-known home** | Where an artifact lives. Chosen by the server from the project's state, never by CV. The planet before a repo exists; `.wag/` in the project repo after. |
-| **phase** | Where a project is in the wag cycle: discovery, init, docs, adr, dev, rvw, tri. Stored in state; written only by the server. |
+| **phase** | Where a project is in the wag cycle: discovery, init, docs, adr, dev, rvw, tri. Derived from artifacts on every orient; never stored. |
 | **position** | Where within a phase the project is. Never stored; discovered from artifacts on every orient. |
 | **planet** | The project's Dropbox folder. Home of discovery, dated decision captures, and the door into kwiki. Not a wag state store once a repo exists. |
 | **project repo** | The project's private GitHub repo. Holds `.wag/`, the app, and the workflow that runs dev and rvw. Created from the template repo at init. |
@@ -36,7 +36,7 @@ One name per referent, everywhere — these docs, the tool contract, the data mo
 | **module** | An internal library under the wag surface: the GitHub module, the Dropbox module, the Actions module. Not advertised to CV in v1. |
 | **audit log** | The durable append-only record of every tool call the server handled: who, what, where, when. |
 | **shared secret** | The header value every request to the server must carry. |
-| **state** | The project's `.wag/state.json`: app name, wag version, phase, active epic, active PBI, feature branch. |
+| **state** | The project's `.wag/state.json`, exactly wag2's shape: app name, wag version, active epic, active PBI, feature branch. Nothing wagc-specific. |
 
 ## Tech stack
 
@@ -66,7 +66,7 @@ CV (voice, MCP tools only)
 │      │                                                            │
 │  phase engine   reads state + artifacts → phase, position         │
 │                 returns ritual; on approve runs checks, acts,     │
-│                 advances phase; chooses every well-known home     │
+│                 chooses every well-known home; stores no phase    │
 │      │                                                            │
 │  modules        github · dropbox · actions   (internal libraries) │
 │                                                                   │
@@ -82,7 +82,7 @@ CV (voice, MCP tools only)
 
 **The surface** is one tool. Without a continuation it orients. With one it acts. Its response always carries the ritual for whatever comes next, so CV never reads the toolkit itself.
 
-**The phase engine** owns the rules wag's command text used to enforce in Claude Code: halt on open snags, template manifests, an approved ADR before dev, green checks and a review before merge, never merge without approve. It derives position from artifacts on every call and writes the phase only at continuation boundaries. It decides where each artifact lives from whether the project has a repo yet.
+**The phase engine** owns the rules wag's command text used to enforce in Claude Code: halt on open snags, template manifests, an approved ADR before dev, green checks and a review before merge, never merge without approve. It derives phase and position from artifacts on every call and stores neither; state keeps wag2's shape, so a project worked from CC needs nothing added. It decides where each artifact lives from whether the project has a repo yet.
 
 **The modules** are plain libraries. Nothing in them knows about phases. They are structured so any of them can be mounted as its own MCP surface later without change.
 
@@ -130,7 +130,7 @@ samfreeman/claude-home              the toolkit, checked out at a pinned ref ins
 | 4 | Self-hosted runners first, GitHub-hosted fallback; repos private | GitHub-hosted only; public repos for free minutes; one always-on machine | Laptops become an optimisation, not architecture. Self-hosted must not serve public repos, so private it is, and fallback minutes are accepted on rare all-off days. |
 | 5 | Toolkit pinned, not copied | Copy the toolkit into each project; plugin now | A copy breaks RADD's uphill flow. A pinned claude-home ref is reproducible and upstream-fixable today; the plugin is the same pin in a better package later. |
 | 6 | One entry point with three continuations | Per-phase open/close tools; raw file tools with wag on good faith; a separate capture verb | approve, snag and save mean the same thing in every phase, so the phase engine, not the tool count, carries the phase logic. Enforcement on approve arrives for free. Raw tools stay reachable but unadvertised. |
-| 7 | Phase stored, position derived | Store nothing (derive phase too); store everything | Phase changes only at continuation boundaries, which only the server executes, so a stored phase cannot drift. Position changes constantly and is cheap to read off artifacts. |
+| 7 | Phase derived, nothing stored beyond wag2's state | Store the phase (wag1's `current_mode`, dropped in wag2); store everything | Projects are worked from CC as well as the server, so a stored phase has two writers and drifts. Every phase is a function of the artifacts: no repo is discovery, an open snag is tri, an active ADR by status is adr or dev, a PR by review state is rvw or merge, nothing pending is between PBIs. Docs is a ritual run from that position, not a stored state. State stays exactly wag2's shape, so CC needs no change and adoption needs no stamp. |
 | 8 | Server chooses every well-known home | CV names paths; a save-specific location parameter | The planet/repo boundary is a rule the server owns. CV never knows where anything is. |
 | 9 | Init is two-stage: planet then template repo | Create the repo first; carry discovery in the closing call | Discovery can span sessions and must be saved as it goes; a template repo makes the first commit already carry the workflow, so there is no chicken-and-egg on dispatch. |
 | 10 | Asks are PR/issue comments; the run stops and is re-triggered | Telegram (wagh); keep the run alive waiting | GitHub-native when the run lives in Actions and the answer comes from CV. Same hard-stop contract as the headless court. |
@@ -141,19 +141,18 @@ samfreeman/claude-home              the toolkit, checked out at a pinned ref ins
 
 No database. State is files in three places, all written only by the server.
 
-**Project state** — `.wag/state.json` in the project repo. The existing wag2 fields plus the phase:
+**Project state** — `.wag/state.json` in the project repo, exactly the wag2 fields, none added:
 
 | Field | Meaning |
 |-------|---------|
 | app_name | The project name |
 | wag_version | The wag2 tooling version the project runs under |
-| phase | discovery, init, docs, adr, dev, rvw, tri. Written by the server at continuation boundaries only |
 | active_epic | Epic folder in scope; defaults to epic-000-general |
 | active_pbi | Zero-padded local PBI number, or null between PBIs |
 | feature_branch | The branch an approved ADR lives on, or null |
 | docs_page_path | Unchanged from wag2 |
 
-**Position** is not stored. It is derived on each orient from: open snags, the active ADR and its status, the feature branch's existence and PR, the PR's checks and reviews, the stash, and, before a repo exists, the planet's contents.
+**Phase and position** are not stored. Both are derived on each orient from: the registry (no repo means discovery), open snags, the active ADR and its status, the feature branch's existence and PR, the PR's checks and reviews, the stash, and, before a repo exists, the planet's contents.
 
 **Planet** — `<Dropbox>/Claude/<project>/`. Discovery drafts (PRD, notes), dated decision captures (`<topic>-decisions-YYYY-MM-DD.md`), and after init only what is not wag state.
 
@@ -203,9 +202,9 @@ The baseline app already exists and boots: a Next.js 15 App Router project with 
 - **Voice layer.** How the ritual summarises an ADR or a review for speech without losing the written artifact's precision.
 - **Rate limits.** Whether one subscription comfortably carries CV plus concurrent runs.
 - **Fallback frequency.** Observed all-laptops-off rate, which decides whether one always-on runner is worth it.
-- **Stored phase versus derived position.** Projects are worked from CC as well as CV, and wag2's CC commands do not yet write the phase. When the two disagree, orient either repairs the phase from the artifacts or refuses until repaired; the uphill fix is wag2 writing the phase at the same boundaries. Decided in PBI 001.012's ADR, applied from PBI 001.001.
 
 ## Changelog
 
+- 1.2 (2026-09-04) — SNAG-001: phase derived, not stored; decision 7 and the state model corrected.
 - 1.1 (2026-09-04) — Open question on stored phase versus derived position for projects also worked from CC; adoption of existing projects noted.
 - 1.0 (2026-09-04) — Initial, derived from the 2026-09-04 discovery grill.

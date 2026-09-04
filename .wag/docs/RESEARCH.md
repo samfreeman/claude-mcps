@@ -88,9 +88,9 @@ Sam's system map already places every project in a Dropbox planet folder with do
 
 The surface-toolsets record shows CD running kwiki rituals end to end by reading the sidecar text and following it in good faith. wagc does the same, but the server hands back the ritual with the state on orient, so CV reads nothing from claude-home directly. This is route-scoped prompting: the tool result carries the instructions for the next stretch of conversation.
 
-### Derived position, stored phase
+### Derived phase and position
 
-Wag's state file already records only what cannot be derived (the active PBI and feature branch) and reads everything else off the repo. wagc adds one stored field, the phase, written only by the server at continuation boundaries. Position within the phase is discovered from artifacts on every orient, so it cannot drift.
+Wag's state file already records only what cannot be derived (the active epic, PBI and feature branch) and reads everything else off the repo. wagc adds nothing: the phase, like the position within it, is derived from artifacts on every orient. wag1 stored a `current_mode` and wag2 dropped it; a stored phase with two writers (CC and the server) would drift, and every phase turns out to be a function of the artifacts.
 
 ## Key takeaways
 
@@ -127,3 +127,7 @@ Wag's state file already records only what cannot be derived (the active PBI and
 - Whether Claude Code's Agent tool and team shape run cleanly inside an Actions runner, or whether the run becomes a single confined agent. Accepted either way.
 - The right home for the audit log.
 - Observed frequency of all-laptops-off, which decides whether fallback minutes matter.
+
+## Changelog
+
+- 2026-09-04 — SNAG-001: "Derived position, stored phase" became "Derived phase and position".

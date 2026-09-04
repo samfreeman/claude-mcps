@@ -11,12 +11,12 @@ Sam can build a Node project end to end from CV by voice, with no laptop require
 ## Deliverables
 
 - The wag entry point on the server: orient with ritual, and the approve, snag and save continuations, behaving per phase.
-- The phase engine: stored phase, derived position, artifact double-checks on approve, well-known home resolution across planet and project repo.
+- The phase engine: phase and position derived from artifacts, artifact double-checks on approve, well-known home resolution across planet and project repo.
 - The GitHub, Dropbox and Actions modules as internal libraries the surface calls.
 - The template repo every project repo is generated from, carrying the workflow, the `.wag/` skeleton and the toolkit pin.
 - The Actions workflow that runs Claude Code on the subscription token with the toolkit checked out, for dev and review runs, ending at a PR or a verdict, stopping on an ask.
 - Self-hosted runner registration on Sam's laptops with GitHub-hosted fallback.
-- Adoption of existing wag2 projects, so a project not born from the template is stamped, wired for runs and registered, and thereafter treated like any other.
+- Adoption of existing wag2 projects, so a project not born from the template is wired for runs and registered, and thereafter treated like any other.
 
 ## Design Input Required
 
